@@ -1,0 +1,283 @@
+// Prisma Schema for Idlib Eats Multi-Vendor Food Delivery Platform
+// Database: PostgreSQL with spatial extensions (PostGIS)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  RESTAURANT
+  DRIVER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY_FOR_PICKUP
+  ON_THE_WAY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  COD             // Cash on Delivery
+  SYRIATEL_CASH   // Syriatel Cash (*3040#)
+  SHAM_CASH       // Sham Cash
+  MTN_CASH        // MTN Cash (*2020#)
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum VehicleType {
+  MOTORCYCLE
+  BICYCLE
+  CAR
+}
+
+model User {
+  id           String         @id @default(cuid())
+  role         Role           @default(CUSTOMER)
+  name         String
+  phone        String         @unique
+  email        String?        @unique
+  passwordHash String
+  avatar       String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  addresses    Address[]
+  restaurants  Restaurant[]   @relation("RestaurantOwner")
+  orders       Order[]        @relation("CustomerOrders")
+  driverProfile DriverProfile?
+  reviews      Review[]       @relation("CustomerReviews")
+
+  @@index([phone])
+}
+
+model Address {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label        String   // e.g. "المنزل", "العمل", "مكتب الثورة"
+  neighborhood String   // e.g. "Al-Thawra", "Al-Dabbit", "Al-Qusoor"
+  street       String
+  building     String?
+  floor        String?
+  notes        String?
+  lat          Float
+  lng          Float
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  orders       Order[]
+
+  @@index([userId])
+}
+
+model Restaurant {
+  id             String      @id @default(cuid())
+  ownerId        String
+  owner          User        @relation("RestaurantOwner", fields: [ownerId], references: [id])
+  name           String
+  nameAr         String
+  description    String
+  descriptionAr  String
+  cuisine        String
+  cuisineAr      String
+  logo           String
+  banner         String
+  address        String
+  addressAr      String
+  neighborhood   String
+  lat            Float
+  lng            Float
+  phone          String
+  hours          String
+  deliveryFee    Int         @default(3000) // in SYP
+  minOrder       Int         @default(15000) // in SYP
+  commissionRate Float       @default(0.12)  // 12% platform fee
+  isActive       Boolean     @default(true)
+  isOpen         Boolean     @default(true)
+  rating         Float       @default(4.8)
+  reviewCount    Int         @default(0)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  categories     Category[]
+  menuItems      MenuItem[]
+  orders         Order[]
+  reviews        Review[]
+
+  @@index([lat, lng])
+  @@index([isActive, isOpen])
+}
+
+model Category {
+  id          String      @id @default(cuid())
+  restaurantId String?
+  restaurant  Restaurant? @relation(fields: [restaurantId], references: [id])
+  name        String
+  nameAr      String
+  icon        String?
+  image       String?
+  sortOrder   Int         @default(0)
+
+  menuItems   MenuItem[]
+}
+
+model MenuItem {
+  id              String          @id @default(cuid())
+  restaurantId    String
+  restaurant      Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  categoryId      String
+  category        Category        @relation(fields: [categoryId], references: [id])
+  name            String
+  nameAr          String
+  description     String
+  descriptionAr   String
+  price           Int             // in SYP
+  image           String
+  isAvailable     Boolean         @default(true)
+  isPopular       Boolean         @default(false)
+  prepTimeMinutes Int             @default(20)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  modifierGroups  ModifierGroup[]
+  orderItems      OrderItem[]
+
+  @@index([restaurantId])
+}
+
+model ModifierGroup {
+  id           String           @id @default(cuid())
+  menuItemId   String
+  menuItem     MenuItem         @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  name         String
+  nameAr       String
+  required     Boolean          @default(false)
+  maxSelection Int              @default(1)
+  options      ModifierOption[]
+}
+
+model ModifierOption {
+  id              String        @id @default(cuid())
+  modifierGroupId String
+  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+  name            String
+  nameAr          String
+  price           Int           @default(0) // Extra SYP
+}
+
+model Order {
+  id               String        @id @default(cuid())
+  orderNumber      String        @unique // #IDL-XXXX
+  customerId       String
+  customer         User          @relation("CustomerOrders", fields: [customerId], references: [id])
+  restaurantId     String
+  restaurant       Restaurant    @relation(fields: [restaurantId], references: [id])
+  driverId         String?
+  driver           DriverProfile? @relation(fields: [driverId], references: [id])
+  addressId        String
+  address          Address       @relation(fields: [addressId], references: [id])
+  
+  status           OrderStatus   @default(PENDING)
+  subtotal         Int           // in SYP
+  deliveryFee      Int           // in SYP
+  discount         Int           @default(0)
+  total            Int           // in SYP
+  
+  paymentMethod    PaymentMethod @default(COD)
+  paymentStatus    PaymentStatus @default(PENDING)
+  transactionRef   String?
+  notes            String?
+  otpCode          String        // 4-digit code for verification
+  prepTimeMinutes  Int?          @default(25)
+  
+  createdAt        DateTime      @default(now())
+  deliveredAt      DateTime?
+
+  items            OrderItem[]
+  reviews          Review[]
+
+  @@index([customerId])
+  @@index([restaurantId])
+  @@index([driverId])
+  @@index([status])
+}
+
+model OrderItem {
+  id              String   @id @default(cuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId      String
+  menuItem        MenuItem @relation(fields: [menuItemId], references: [id])
+  name            String
+  nameAr          String
+  quantity        Int      @default(1)
+  unitPrice       Int
+  totalPrice      Int
+  modifiersData   Json?    // Selected modifiers snapshot
+}
+
+model DriverProfile {
+  id                  String      @id @default(cuid())
+  userId              String      @unique
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleType         VehicleType @default(MOTORCYCLE)
+  licensePlate        String?
+  isOnline            Boolean     @default(false)
+  currentLat          Float       @default(35.9306) // Idlib center
+  currentLng          Float       @default(36.6340)
+  rating              Float       @default(4.9)
+  completedDeliveries Int         @default(0)
+  todayEarnings       Int         @default(0) // in SYP
+  cashInHand          Int         @default(0) // Collected COD
+  createdAt           DateTime    @default(now())
+
+  orders              Order[]
+
+  @@index([currentLat, currentLng])
+  @@index([isOnline])
+}
+
+model Review {
+  id               String     @id @default(cuid())
+  orderId          String
+  order            Order      @relation(fields: [orderId], references: [id])
+  customerId       String
+  customer         User       @relation("CustomerReviews", fields: [customerId], references: [id])
+  restaurantId     String
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantRating Int        @default(5)
+  driverRating     Int?       @default(5)
+  comment          String?
+  createdAt        DateTime   @default(now())
+
+  @@index([restaurantId])
+}
+
+model Promotion {
+  id                 String   @id @default(cuid())
+  code               String   @unique
+  discountAmount     Int?     // Fixed SYP
+  discountPercentage Float?   // e.g. 15%
+  minOrder           Int      @default(20000)
+  description        String
+  descriptionAr      String
+  isActive           Boolean  @default(true)
+  expiryDate         DateTime
+}

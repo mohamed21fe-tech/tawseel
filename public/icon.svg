@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ea580c" />
+      <stop offset="100%" stop-color="#c2410c" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <!-- Rounded Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  
+  <!-- Food Cloche Cover & Delivery Icon -->
+  <g filter="url(#shadow)" transform="translate(0, 10)">
+    <!-- Cloche Handle -->
+    <circle cx="256" cy="140" r="22" fill="#fed7aa" />
+    
+    <!-- Cloche Dome -->
+    <path d="M 120 280 C 120 180, 200 160, 256 160 C 312 160, 392 180, 392 280 Z" fill="#ffffff" />
+    
+    <!-- Cloche Tray Base -->
+    <rect x="96" y="280" width="320" height="24" rx="12" fill="#ffedd5" />
+    
+    <!-- Speed / Delivery Stripes in Plate -->
+    <path d="M 170 330 L 342 330" stroke="#ffedd5" stroke-width="12" stroke-linecap="round" />
+    <path d="M 210 365 L 302 365" stroke="#fed7aa" stroke-width="10" stroke-linecap="round" />
+
+    <!-- Aroma / Steam curves -->
+    <path d="M 220 110 Q 210 80, 225 60" stroke="#fef08a" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.9" />
+    <path d="M 256 100 Q 270 70, 256 50" stroke="#fef08a" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.9" />
+    <path d="M 292 110 Q 302 80, 287 60" stroke="#fef08a" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.9" />
+
+    <!-- Fork & Spoon Accent inside Cloche -->
+    <circle cx="256" cy="235" r="30" fill="#ea580c" />
+    <path d="M 245 225 L 267 247 M 267 225 L 245 247" stroke="#ffffff" stroke-width="5" stroke-linecap="round" />
+  </g>
+  
+  <!-- Subtle Olive Branch Leaf (Symbol of Idlib, the City of Olives "مدينة الزيتون") -->
+  <path d="M 160 410 C 180 390, 210 395, 230 420 C 210 425, 180 430, 160 410 Z" fill="#65a30d" />
+  <path d="M 235 418 C 255 398, 285 403, 305 428 C 285 433, 255 438, 235 418 Z" fill="#84cc16" />
+  <path d="M 310 426 C 330 406, 360 411, 380 436 C 360 441, 330 446, 310 426 Z" fill="#65a30d" />
+</svg>

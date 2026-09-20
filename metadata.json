@@ -1,0 +1,10 @@
+{
+  "name": "Idlib Eats",
+  "description": "Multi-vendor food delivery progressive web app for Idlib, Syria, featuring real-time OpenStreetMap tracking, multi-role dashboards, and local Syrian payments.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
